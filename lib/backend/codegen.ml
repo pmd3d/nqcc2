@@ -89,6 +89,51 @@ let convert_cond_code signed = function
   | Tacky.LessOrEqual -> if signed then Assembly.LE else Assembly.BE
   | _ -> failwith "Internal error: not a condition code" [@coverage off]
 
+(* Helper functions for double comparisons w/ support for NaN *)
+let convert_dbl_comparison op dst_t asm_src1 asm_src2 asm_dst =
+  let cond_code = convert_cond_code false op in
+  (* If op is A or AE, can perform usual comparisons;
+     * these are true only if some flags are 0, so they'll be false for unordered results.
+       * If op is B or BE, just flip operands and use A or AE instead.
+     * If op is E or NE, need to check for parity afterwards *)
+  let cond_code, asm_src1, asm_src2 =
+    match cond_code with
+    | B -> (Assembly.A, asm_src2, asm_src1)
+    | BE -> (AE, asm_src2, asm_src1)
+    | _ -> (cond_code, asm_src1, asm_src2)
+  in
+  let instrs =
+    Assembly.
+      [
+        Cmp (Double, asm_src2, asm_src1);
+        Mov (dst_t, zero, asm_dst);
+        SetCC (cond_code, asm_dst);
+      ]
+  in
+  let parity_instrs =
+    match cond_code with
+    | Assembly.E ->
+        (* zero out destination if parity flag is set,
+         * indicating unordered result
+         *)
+        Assembly.
+          [
+            Mov (dst_t, zero, Reg R9);
+            SetCC (NP, Reg R9);
+            Binary { op = And; t = dst_t; src = Reg R9; dst = asm_dst };
+          ]
+    | Assembly.NE ->
+        (* set destination to 1 if parity flag is set, indicating ordered result *)
+        Assembly.
+          [
+            Mov (dst_t, zero, Reg R9);
+            SetCC (P, Reg R9);
+            Binary { op = Or; t = dst_t; src = Reg R9; dst = asm_dst };
+          ]
+    | _ -> []
+  in
+  instrs @ parity_instrs
+
 let classify_parameters tacky_vals =
   let process_one_param (int_reg_args, dbl_reg_args, stack_args) v =
     let operand = convert_val v in
@@ -180,6 +225,8 @@ let convert_function_call f args dst =
   let return_reg = if asm_type dst = Double then Assembly.XMM0 else AX in
   instructions @ [ Mov (asm_type dst, Reg return_reg, assembly_dst) ]
 
+let nan_enabled () = List.mem Settings.Nan !Settings.extra_credit_flags
+
 let convert_instruction = function
   | Tacky.Copy { src; dst } ->
       let t = asm_type src in
@@ -205,6 +252,17 @@ let convert_instruction = function
           Mov (dst_t, zero, asm_dst);
           SetCC (E, asm_dst);
         ]
+        @
+        if nan_enabled () then
+          (* cmp with NaN sets both ZF and PF, but !NaN should evaluate to 0,
+           * so we'll calculate:
+           * !x = ZF && !PF
+           *)
+          [
+            SetCC (NP, Reg R9);
+            Binary { op = And; t = dst_t; src = Reg R9; dst = asm_dst };
+          ]
+        else []
       else
         [
           Cmp (src_t, zero, asm_src);
@@ -235,16 +293,19 @@ let convert_instruction = function
       (* Relational operator *)
       | Equal | NotEqual | GreaterThan | GreaterOrEqual | LessThan | LessOrEqual
         ->
-          let signed =
-            if src_t = Double then false
-            else Type_utils.is_signed (tacky_type src1)
-          in
-          let cond_code = convert_cond_code signed op in
-          [
-            Cmp (src_t, asm_src2, asm_src1);
-            Mov (dst_t, zero, asm_dst);
-            SetCC (cond_code, asm_dst);
-          ]
+          if src_t = Double && nan_enabled () then
+            convert_dbl_comparison op dst_t asm_src1 asm_src2 asm_dst
+          else
+            let signed =
+              if src_t = Double then false
+              else Type_utils.is_signed (tacky_type src1)
+            in
+            let cond_code = convert_cond_code signed op in
+            [
+              Cmp (src_t, asm_src2, asm_src1);
+              Mov (dst_t, zero, asm_dst);
+              SetCC (cond_code, asm_dst);
+            ]
       (* Division/modulo *)
       | (Divide | Mod) when src_t <> Double ->
           let result_reg = if op = Divide then Assembly.AX else DX in
@@ -293,12 +354,29 @@ let convert_instruction = function
       let t = asm_type cond in
       let asm_cond = convert_val cond in
       if t = Double then
-        [
-          Assembly.Binary
-            { op = Xor; t = Double; src = Reg XMM0; dst = Reg XMM0 };
-          Cmp (t, asm_cond, Reg XMM0);
-          JmpCC (E, target);
-        ]
+        let compare_to_zero =
+          [
+            Assembly.Binary
+              { op = Xor; t = Double; src = Reg XMM0; dst = Reg XMM0 };
+            Cmp (t, asm_cond, Reg XMM0);
+          ]
+        in
+        let conditional_jump =
+          if nan_enabled () then
+            let lbl = Unique_ids.make_label "nan.jmp.end" in
+            Assembly.
+              [
+                (* Comparison to NaN sets ZF and PF flag;
+                 * to treat NaN as nonzero, skip over je instruction if PF flag is set
+                 *)
+                JmpCC (P, lbl);
+                JmpCC (E, target);
+                Label lbl;
+              ]
+            (* If we're not worried about supporting NaN, just issue je instruction *)
+          else [ JmpCC (E, target) ]
+        in
+        compare_to_zero @ conditional_jump
       else [ Cmp (t, zero, asm_cond); JmpCC (E, target) ]
   | Tacky.JumpIfNotZero (cond, target) ->
       let t = asm_type cond in
@@ -310,6 +388,9 @@ let convert_instruction = function
           Cmp (t, asm_cond, Reg XMM0);
           JmpCC (NE, target);
         ]
+        @
+        (* If NaN is enabled, also jump to target on NaN, which is nonzero *)
+        if nan_enabled () then [ JmpCC (P, target) ] else []
       else [ Cmp (t, zero, asm_cond); JmpCC (NE, target) ]
   | Tacky.Label l -> [ Label l ]
   | Tacky.FunCall { f; args; dst } -> convert_function_call f args dst
