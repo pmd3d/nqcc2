@@ -78,7 +78,7 @@ jobs:
       # skip building if we get a cache hit
       - name: Set up OCaml
         if: steps.cache-nqcc.outputs.cache-hit != 'true'
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 4.14.x
           # necessary to avoid random errors, see https://github.com/ocaml/setup-ocaml/issues/400
