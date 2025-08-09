@@ -13,3 +13,13 @@ pub enum Statement {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Program;
+
+pub mod typed {
+    use crate::types::Type;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct Exp<T> {
+        pub e: T,
+        pub t: Type,
+    }
+}
