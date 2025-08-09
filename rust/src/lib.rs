@@ -12,3 +12,6 @@ pub mod int8;
 pub mod rounding;
 pub mod type_utils;
 pub mod unique_ids;
+pub mod initializers;
+pub mod symbols;
+pub mod tacky;
