@@ -25,3 +25,8 @@ pub mod const_convert;
 pub mod cfg;
 pub mod backward_dataflow;
 pub mod compile;
+pub mod assembly_symbols;
+pub mod codegen;
+pub mod regalloc;
+pub mod replace_pseudos;
+pub mod instruction_fixup;
