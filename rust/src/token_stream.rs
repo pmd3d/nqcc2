@@ -18,6 +18,10 @@ impl TokenStream {
         self.queue.front()
     }
 
+    pub fn npeek(&self, n: usize) -> Vec<Token> {
+        self.queue.iter().take(n).cloned().collect()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }

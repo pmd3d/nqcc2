@@ -33,3 +33,4 @@ pub mod codegen;
 pub mod regalloc;
 pub mod replace_pseudos;
 pub mod instruction_fixup;
+pub mod optimizations;
