@@ -1,6 +1,6 @@
 use crate::initializers::StaticInit;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Reg {
     AX,
     BX,
@@ -36,7 +36,7 @@ pub enum Reg {
     XMM15,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Operand {
     Imm(i64),
     Reg(Reg),
