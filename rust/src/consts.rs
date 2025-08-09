@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::types::Type;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Const {
@@ -22,5 +23,17 @@ impl fmt::Display for Const {
             Const::ULong(u) => write!(f, "{}UL", u),
             Const::Double(d) => write!(f, "{}", d),
         }
+    }
+}
+
+pub fn type_of_const(c: &Const) -> Type {
+    match c {
+        Const::Char(_) => Type::SChar,
+        Const::UChar(_) => Type::UChar,
+        Const::Int(_) => Type::Int,
+        Const::Long(_) => Type::Long,
+        Const::UInt(_) => Type::UInt,
+        Const::ULong(_) => Type::ULong,
+        Const::Double(_) => Type::Double,
     }
 }
