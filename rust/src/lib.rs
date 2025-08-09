@@ -15,3 +15,5 @@ pub mod unique_ids;
 pub mod initializers;
 pub mod symbols;
 pub mod tacky;
+pub mod tacky_gen;
+pub mod tacky_print;
