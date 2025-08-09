@@ -57,10 +57,6 @@ pub mod private {
         result
     }
 
-    fn is_ident(t: &Token) -> bool {
-        matches!(t, Token::Identifier(_))
-    }
-
     // specifiers
     fn is_type_specifier(t: &Token) -> bool {
         matches!(
