@@ -21,3 +21,7 @@ pub mod settings;
 pub mod assembly;
 pub mod reg_set;
 pub mod emit;
+pub mod const_convert;
+pub mod cfg;
+pub mod backward_dataflow;
+pub mod compile;
