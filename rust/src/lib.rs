@@ -7,3 +7,8 @@ pub mod tokens;
 pub mod type_table;
 pub mod types;
 pub mod utils;
+pub mod disjoint_sets;
+pub mod int8;
+pub mod rounding;
+pub mod type_utils;
+pub mod unique_ids;
