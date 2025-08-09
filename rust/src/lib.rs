@@ -17,3 +17,7 @@ pub mod symbols;
 pub mod tacky;
 pub mod tacky_gen;
 pub mod tacky_print;
+pub mod settings;
+pub mod assembly;
+pub mod reg_set;
+pub mod emit;

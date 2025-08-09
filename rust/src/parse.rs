@@ -16,6 +16,13 @@ pub mod private {
         }
     }
 
+    pub fn parse_id(ts: &mut TokenStream) -> Result<String> {
+        match ts.take_token() {
+            Some(Token::Identifier(id)) => Ok(id),
+            other => Err(ParseError(format!("expected identifier got {:?}", other))),
+        }
+    }
+
     pub fn parse_const(ts: &mut TokenStream) -> Result<Const> {
         match ts.take_token() {
             Some(Token::ConstInt(v)) => {
@@ -75,6 +82,7 @@ pub mod private {
 pub use private::parse_const;
 pub use private::parse_exp;
 pub use private::parse_statement;
+pub use private::parse_id;
 
 pub fn parse(tokens: Vec<Token>) -> Result<Program> {
     let mut ts = TokenStream::new(tokens);
