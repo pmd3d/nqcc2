@@ -1,4 +1,4 @@
-use crate::ast::{self, Exp, Statement};
+use crate::ast::{self, Exp, Statement, typed};
 use crate::consts::Const;
 use crate::tacky::{self, Instruction, Program as TackyProgram, TackyVal, TopLevel};
 
@@ -23,13 +23,13 @@ fn emit_tacky_for_statement(stmt: &Statement) -> Vec<Instruction> {
     }
 }
 
-/// Generate a TACKY program from an AST program.
+/// Generate a TACKY program from a typed AST program.
 ///
 /// The current Rust port only supports a very small subset of the
 /// original compiler.  As a result the generated program is typically
 /// empty, but this function exists so that subsequent ports can hook
 /// into it.
-pub fn r#gen(_prog: ast::Program) -> tacky::Program {
+pub fn r#gen(_prog: typed::Program) -> tacky::Program {
     // The OCaml version converts an entire AST into a list of top level
     // TACKY definitions.  The Rust translation does not yet have a
     // complete AST so for now we simply return an empty program.
