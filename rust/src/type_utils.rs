@@ -1,12 +1,12 @@
-use crate::ast::typed::Exp as TypedExp;
+use crate::ast::typed::{Exp as TypedExp, InnerExp};
 use crate::type_table;
 use crate::types::Type;
 
-pub fn get_type<T>(exp: &TypedExp<T>) -> Type {
+pub fn get_type(exp: &TypedExp) -> Type {
     exp.t.clone()
 }
 
-pub fn set_type<T>(e: T, new_type: Type) -> TypedExp<T> {
+pub fn set_type(e: InnerExp, new_type: Type) -> TypedExp {
     TypedExp { e, t: new_type }
 }
 
@@ -40,7 +40,11 @@ pub fn is_signed(t: &Type) -> bool {
     match t {
         Type::Int | Type::Long | Type::Char | Type::SChar => true,
         Type::UInt | Type::ULong | Type::Pointer(_) | Type::UChar => false,
-        Type::Double | Type::FunType { .. } | Type::Array { .. } | Type::Void | Type::Structure(_) => {
+        Type::Double
+        | Type::FunType { .. }
+        | Type::Array { .. }
+        | Type::Void
+        | Type::Structure(_) => {
             panic!(
                 "Internal error: signedness doesn't make sense for non-integral type {}",
                 t
@@ -56,13 +60,7 @@ pub fn is_pointer(t: &Type) -> bool {
 pub fn is_integer(t: &Type) -> bool {
     matches!(
         t,
-        Type::Char
-            | Type::UChar
-            | Type::SChar
-            | Type::Int
-            | Type::UInt
-            | Type::Long
-            | Type::ULong
+        Type::Char | Type::UChar | Type::SChar | Type::Int | Type::UInt | Type::Long | Type::ULong
     )
 }
 

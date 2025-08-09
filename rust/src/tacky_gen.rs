@@ -6,7 +6,7 @@ use crate::tacky::{self, Instruction, Program as TackyProgram, TackyVal, TopLeve
 fn emit_tacky_for_exp(e: &Exp) -> (Vec<Instruction>, TackyVal) {
     match e {
         Exp::Constant(c) => (vec![], TackyVal::Constant(c.clone())),
-        //_ => unimplemented!("expression translation not yet implemented"),
+        _ => unimplemented!("expression translation not yet implemented"),
     }
 }
 
@@ -19,6 +19,7 @@ fn emit_tacky_for_statement(stmt: &Statement) -> Vec<Instruction> {
             instrs.push(Instruction::Return(Some(val)));
             instrs
         }
+        _ => unimplemented!("statement translation not yet implemented"),
     }
 }
 
@@ -50,4 +51,3 @@ mod tests {
         }
     }
 }
-
